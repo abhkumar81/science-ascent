@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ascent — a science climb, grades 1 to 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FBF6EC;--paper-edge:#EFE6D3;--ink:#20242E;--ink-soft:#5A5F6E;--spark:#E8912E;--spark-hi:#FFB446;--correct:#3C9A6E;--correct-bg:#E4F3EA;--rethink:#D8663F;--rethink-bg:#FBE7DE;--line:#E4DAC6;--sky-top:#F6E7C6;--sky-bot:#C7DEB0;--star-op:0;--display:"Fraunces",Georgia,serif;--ui:"Space Grotesk",system-ui,sans-serif;}
+body.g1{--sky-top:#F7E9C4;--sky-bot:#C9DFAE;--star-op:0;}
+body.g2{--sky-top:#CDE9EF;--sky-bot:#E7F5E6;}body.g3{--sky-top:#B9DFF6;--sky-bot:#E6F3FB;}
+body.g4{--sky-top:#F6CE9A;--sky-bot:#D79BB0;}body.g5{--sky-top:#7E8ACB;--sky-bot:#3E4488;--star-op:.35;}
+body.g6{--sky-top:#232A4D;--sky-bot:#0C0F2A;--star-op:1;}
+*{box-sizing:border-box;margin:0;padding:0}html{-webkit-text-size-adjust:100%}
+body{font-family:var(--ui);color:var(--ink);min-height:100vh;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-bot) 100%);background-attachment:fixed;transition:background 1.1s ease;overflow-x:hidden;position:relative}
+.stars{position:fixed;inset:0;pointer-events:none;opacity:var(--star-op);transition:opacity 1.1s ease;z-index:0}
+.stars i{position:absolute;background:#fff;border-radius:50%;animation:tw 4s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.25}50%{opacity:1}}
+.wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:28px 20px 90px}
+.gauge{position:fixed;left:max(14px,calc(50vw - 430px));top:0;bottom:0;width:44px;display:flex;flex-direction:column;justify-content:center;gap:6px;z-index:3;pointer-events:none}
+@media(max-width:900px){.gauge{display:none}}
+.rung{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:var(--ink-soft);opacity:.55;transition:.4s}
+.rung .dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink-soft);background:transparent;transition:.4s;flex:none}
+.rung.done{opacity:.9}.rung.done .dot{background:var(--correct);border-color:var(--correct)}
+.rung.here{opacity:1;color:var(--ink)}.rung.here .dot{background:var(--spark);border-color:var(--spark);box-shadow:0 0 0 5px rgba(232,145,46,.18)}
+.g5 .rung,.g6 .rung{color:#EEE9F5}.g5 .rung .dot,.g6 .rung .dot{border-color:#B9C0DE}
+.mast{text-align:center;margin:14px 0 26px}
+.mast .eyebrow{font-size:12.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.g5 .mast .eyebrow,.g6 .mast .eyebrow{color:#D6D0E6}
+.mast h1{font-family:var(--display);font-weight:600;font-size:clamp(52px,12vw,88px);line-height:.92;letter-spacing:-.02em;margin:6px 0 0}
+.g5 .mast h1,.g6 .mast h1{color:#FBF6EC}
+.mast .sub{font-family:var(--display);font-style:italic;font-size:clamp(17px,4.4vw,21px);color:var(--ink-soft);margin-top:12px}
+.g5 .mast .sub,.g6 .mast .sub{color:#CFC8E0}
+.panel{background:var(--paper);border:1px solid var(--paper-edge);border-radius:20px;padding:30px 28px;box-shadow:0 18px 44px -26px rgba(20,20,40,.5),0 2px 0 var(--paper-edge);animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media(max-width:520px){.panel{padding:24px 18px}}
+.lede{font-size:16.5px;line-height:1.6;color:var(--ink-soft);margin-bottom:6px}.lede b{color:var(--ink);font-weight:600}
+.pick-label{font-family:var(--display);font-size:20px;font-weight:600;margin:24px 0 4px}
+.pick-hint{font-size:13.5px;color:var(--ink-soft);margin-bottom:16px}
+.grades{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:520px){.grades{grid-template-columns:1fr}}
+.gcard{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:15px 16px;cursor:pointer;font-family:var(--ui);transition:.16s;position:relative;overflow:hidden}
+.gcard:hover,.gcard:focus-visible{border-color:var(--spark);transform:translateY(-2px);box-shadow:0 10px 22px -14px rgba(232,145,46,.6);outline:none}
+.gcard.cleared{border-color:#BFE3CD;background:#F5FBF7}.gcard.soon{opacity:.62}.gcard.soon:hover{border-color:var(--line);transform:none;box-shadow:none}
+.gcard .n{font-family:var(--display);font-weight:700;font-size:26px;line-height:1}
+.gcard .band{display:block;font-weight:600;font-size:14.5px;margin:7px 0 3px}
+.gcard .topics{font-size:12.5px;color:var(--ink-soft);line-height:1.4}
+.gcard .alt{position:absolute;right:12px;top:12px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--spark);font-weight:700}
+.gcard .alt.muted{color:var(--ink-soft)}
+.gcard .tick{position:absolute;right:12px;top:11px;width:22px;height:22px;border-radius:50%;background:var(--correct);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.kidgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}@media(max-width:520px){.kidgrid{grid-template-columns:1fr}}
+.kidcard{position:relative;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:18px;cursor:pointer;font-family:var(--ui);transition:.16s;display:flex;align-items:center;gap:14px}
+.kidcard:hover,.kidcard:focus-visible{transform:translateY(-2px);box-shadow:0 10px 22px -14px rgba(20,20,40,.4);outline:none}
+.kidcard .av{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px}
+.kidcard .kn{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.1}
+.kidcard .meta{font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+.kidcard .del{position:absolute;top:8px;right:10px;width:24px;height:24px;border-radius:50%;border:none;background:transparent;color:var(--ink-soft);font-size:15px;cursor:pointer;opacity:.45;transition:.15s;line-height:1}
+.kidcard .del:hover{opacity:1;background:var(--rethink-bg);color:var(--rethink)}
+.addcard{border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:16px;padding:18px;cursor:pointer;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.16s;min-height:84px}
+.addcard:hover{border-color:var(--spark);color:var(--spark)}
+.confirm{display:flex;flex-direction:column;gap:8px;width:100%}.confirm .cq{font-size:14px;font-weight:600}.confirm .row{display:flex;gap:8px}
+.addform{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.addform input{flex:1;min-width:180px;font-size:17px;font-weight:600;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font-family:var(--ui)}
+.addform input:focus{outline:none;border-color:var(--spark)}
+.dash{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:20px}
+.dash .who{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.dash .who .av{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px}
+.dash .who .nm{font-family:var(--display);font-weight:600;font-size:22px;line-height:1}
+.dash .who .switch{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.dash .who .switch:hover{color:var(--spark)}
+.dlabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin:2px 0 9px}
+.climbrow{display:flex;gap:6px}
+.step{flex:1;text-align:center;font-family:var(--display);font-weight:700;font-size:15px;padding:9px 0;border-radius:9px;border:1.5px solid var(--line);color:var(--ink-soft);background:#FBF9F3}
+.step.done{background:var(--correct);border-color:var(--correct);color:#fff}
+.step.next{border-color:var(--spark);color:var(--spark);box-shadow:0 0 0 3px rgba(232,145,46,.14)}
+.step.partial{border-color:var(--spark);color:var(--spark);background:#FFF6E8}
+.strands{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+.strandbar{display:grid;grid-template-columns:130px 1fr 42px;align-items:center;gap:10px;font-size:12.5px}@media(max-width:520px){.strandbar{grid-template-columns:96px 1fr 38px}}
+.strandbar .lab{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:8px;background:#EEE7D8;border-radius:5px;overflow:hidden}.fill{height:100%;border-radius:5px;transition:width .5s}
+.strandbar .pct{text-align:right;font-weight:600;color:var(--ink-soft)}
+.dash-empty{font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px}
+.qhead .band-name{font-family:var(--display);font-weight:600;font-size:22px}
+.qhead .band-name small{display:block;font-family:var(--ui);font-weight:600;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--spark);margin-bottom:2px}
+.g5 .qhead .band-name,.g6 .qhead .band-name{color:#FBF6EC}
+/* Grade map / lesson list */
+.mapmeta{font-size:13.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600}
+.mapbar{height:8px;background:#EEE7D8;border-radius:5px;overflow:hidden;margin:10px 0 20px}
+.mapbar span{display:block;height:100%;background:var(--correct);border-radius:5px;transition:width .5s}
+.lessonrow{display:flex;align-items:center;gap:14px;padding:15px 16px;border:1.5px solid var(--line);background:#fff;border-radius:14px;margin-bottom:10px;text-align:left;width:100%;font-family:var(--ui);cursor:pointer;transition:.15s}
+.lessonrow:hover:not(.locked):not(.soon){border-color:var(--spark);transform:translateX(3px)}
+.lessonrow.done{border-color:#CBE7D6;background:#F6FBF8}
+.lessonrow.current{border-color:var(--spark);box-shadow:0 0 0 3px rgba(232,145,46,.12)}
+.lessonrow.locked,.lessonrow.soon{opacity:.55;cursor:default}
+.lessonrow .lstat{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:700;background:#F1EADA;color:var(--ink-soft)}
+.lessonrow.done .lstat{background:var(--correct);color:#fff}
+.lessonrow.current .lstat{background:var(--spark);color:#fff}
+.lessonrow .lmid{flex:1;min-width:0}
+.lessonrow .ltitle{font-family:var(--display);font-weight:600;font-size:16.5px;line-height:1.15}
+.lessonrow .ltag{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;margin-top:2px}
+.lessonrow .lcta{flex:none;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--spark)}
+.lessonrow.done .lcta{color:var(--correct)}
+.lessonrow.locked .lcta,.lessonrow.soon .lcta{color:var(--ink-soft)}
+/* Lesson read */
+.brief-kicker{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--spark);font-weight:700}
+.brief-head{font-family:var(--display);font-weight:600;font-size:clamp(28px,7vw,40px);line-height:1.04;letter-spacing:-.02em;margin:6px 0 2px}
+.brief-intro{font-size:16.5px;line-height:1.62;color:var(--ink-soft);margin:12px 0 6px}
+.brief-meta{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-bottom:4px}
+.lsec{margin:26px 0;padding-top:22px;border-top:1px solid var(--line)}
+.lsec:first-of-type{border-top:none;padding-top:6px}
+.lsec .snum{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--spark);font-weight:700}
+.lsec h3{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.12;margin:4px 0 10px}
+.lsec p{font-size:15.5px;line-height:1.68;color:var(--ink);margin-bottom:12px}.lsec p b{font-weight:600}
+.lsec .key-take{background:#FFF6E8;border-left:3px solid var(--spark);border-radius:0 10px 10px 0;padding:11px 15px;font-size:14.5px;line-height:1.55;margin-top:6px}
+.lsec .key-take b{font-weight:700}
+.figure{margin:14px 0 4px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 16px 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12.5px;color:var(--ink-soft);text-align:center;margin-top:8px;line-height:1.4}
+.levelbadge{display:inline-block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#fff;background:var(--spark);padding:4px 11px;border-radius:20px;margin-bottom:12px}
+.levelbadge.adv{background:var(--ink)}
+.strand{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--spark);font-weight:700;margin-bottom:10px}
+.qtext{font-family:var(--display);font-size:clamp(21px,5vw,26px);line-height:1.28;font-weight:500;letter-spacing:-.01em;margin-bottom:22px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:13px;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:14px 16px;cursor:pointer;font-family:var(--ui);font-size:15.5px;line-height:1.4;color:var(--ink);transition:.14s;width:100%}
+.opt:hover:not(:disabled),.opt:focus-visible:not(:disabled){border-color:var(--spark);background:#FFFDF7;outline:none}
+.opt .key{flex:none;width:26px;height:26px;border-radius:7px;background:#F1EADA;display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--ink-soft);transition:.14s}
+.opt.selected{border-color:var(--spark);background:#FFF3E1}.opt.selected .key{background:var(--spark);color:#fff}
+.btn{font-family:var(--ui);font-weight:600;font-size:15px;padding:13px 22px;border-radius:12px;border:none;cursor:pointer;transition:.16s;background:var(--spark);color:#fff}
+.btn:hover,.btn:focus-visible{background:var(--spark-hi);transform:translateY(-1px);outline:none;box-shadow:0 8px 18px -10px rgba(232,145,46,.8)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}.btn.ghost:hover{background:#fff;border-color:var(--ink-soft);box-shadow:none}
+.btn.sm{padding:9px 15px;font-size:13.5px}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.g5 .btn.ghost,.g6 .btn.ghost{color:#FBF6EC;border-color:rgba(255,255,255,.35)}
+.actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.progress-pips{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.pip{width:16px;height:6px;border-radius:3px;background:var(--line);transition:.3s}.pip.answered{background:var(--spark)}.pip.now{background:var(--ink-soft)}
+.result-score{font-family:var(--display);font-size:64px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.result-score small{font-size:24px;color:var(--ink-soft);font-weight:400}
+.verdict-line{font-family:var(--display);font-style:italic;font-size:22px;margin:8px 0 8px}
+.passnote{font-size:14.5px;line-height:1.55;color:var(--ink-soft);margin-bottom:8px}.passnote b{color:var(--ink)}
+.revhead{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin:22px 0 12px}
+.revcard{border:1px solid var(--line);border-radius:13px;padding:15px 16px;margin-bottom:11px}
+.revcard.right{border-color:#CBE7D6;background:#F6FBF8}.revcard.wrong{border-color:#F0C8B7;background:#FEF6F1}
+.revcard .rtop{display:flex;gap:10px;align-items:flex-start}
+.revcard .mark{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;margin-top:1px}
+.revcard.right .mark{background:var(--correct)}.revcard.wrong .mark{background:var(--rethink)}
+.revcard .rq{font-weight:600;font-size:14.5px;line-height:1.4}
+.revcard .rans{font-size:13px;margin:9px 0 0 32px;line-height:1.5}
+.revcard .rans .yours{color:var(--rethink);font-weight:600}.revcard .rans .right-ans{color:var(--correct);font-weight:600}
+.revcard .rwhy{font-size:13.5px;line-height:1.6;margin:10px 0 0 32px;padding-top:10px;border-top:1px dashed var(--line);color:var(--ink)}
+.revcard .rwhy b{font-weight:600}.revcard .rwhy .lead{font-family:var(--display);font-style:italic;color:var(--ink-soft);display:block;margin-bottom:3px}
+.revcard .rreal{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0 32px}.revcard .rreal b{color:var(--spark);font-weight:700;letter-spacing:.04em}
+.summit h2{font-family:var(--display);font-size:clamp(34px,9vw,52px);font-weight:700;line-height:1;color:#FBF6EC;letter-spacing:-.02em}
+.summit p{color:#CFC8E0;font-size:16px;line-height:1.6;margin-top:14px}.summit .stat{color:#FFB446}
+.footnote{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:24px;line-height:1.5}
+.g5 .footnote,.g6 .footnote{color:#B7B0CC}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.2s!important}.stars i{animation:none}}
+</style>
+</head>
+<body class="g1">
+<div class="stars" id="stars" aria-hidden="true"></div>
+<nav class="gauge" id="gauge" aria-hidden="true"></nav>
+<main class="wrap" id="app"></main>
+<script>
+const BANDS={1:{name:"Groundwork",topics:"Living things \u00b7 senses \u00b7 light & shadow \u00b7 materials"},2:{name:"First Forces",topics:"Push & pull \u00b7 magnets \u00b7 states of matter"},3:{name:"Systems Begin",topics:"Friction \u00b7 food chains \u00b7 the water cycle"},4:{name:"Energy & Life",topics:"Circuits \u00b7 adaptation \u00b7 sound \u00b7 machines"},5:{name:"Matter & Motion",topics:"Mass \u00b7 net force \u00b7 energy pyramids"},6:{name:"The Big Picture",topics:"Density \u00b7 seasons \u00b7 genetics \u00b7 cells"}};
+const PASS_RATIO=0.8;
+
+/* Each grade = an ORDERED list of idea-lessons. Grade 1 lessons 1-2 authored. */
+const CURRICULUM={
+1:[
+{ id:"g1l1", title:"Alive, or Not?", tag:"Life science",
+  read:{
+   intro:"Look around the room. Some things are alive and some are not \u2014 but how do you actually <b>know</b>? This is one of the very first questions in all of science, and it is trickier than it looks. By the end of this lesson you will have a simple three-part test that works on almost anything, plus a few clever tricks for the cases that fool people.",
+   sections:[
+    {snum:"01",h:"It is harder than it looks",paras:[
+      "A cat is obviously alive. A spoon obviously is not. Easy. But now try some harder ones. Is a <b>seed</b> alive, even though it just sits still in a packet? Is a <b>mushroom</b> alive, with no face and no way to walk? What about a <b>candle flame</b>, which grows, flickers, and seems to \u2018need\u2019 air?",
+      "Because guessing is not good enough for scientists, they came up with a clear test \u2014 a short checklist that every living thing passes and every non-living thing fails. The test has three big parts. Let\u2019s go through them one at a time."]},
+    {snum:"02",h:"Test 1 \u2014 Living things grow from the inside",paras:[
+      "Every living thing gets bigger over time. A tiny kitten becomes a full-grown cat. A single seed becomes a tall sunflower. You are taller this year than last year. A rock, sitting in the garden, will be exactly the same size in ten years.",
+      "But here is the important part: living things grow <b>from the inside</b>, building new parts of themselves out of the food they take in. That is different from something just getting bigger. An icicle can get longer as more water freezes onto its tip \u2014 but that is just water sticking to the <b>outside</b>. The icicle is not building itself. Only living things grow themselves from within."],
+      key:"Living things grow bigger over time by building new parts of themselves from the inside \u2014 not by having stuff stuck onto the outside."},
+    {snum:"03",h:"Test 2 \u2014 Living things need food and water",paras:[
+      "Staying alive takes <b>energy</b>, and living things get that energy from food and water. Animals eat \u2014 a rabbit eats grass, a fox eats the rabbit, you eat your dinner. Plants do something amazing instead: they <b>make their own food</b> using sunlight, water, and air. Either way, cut off the food and water and a living thing weakens and dies.",
+      "\u201cBut wait,\u201d you might say, \u201ca toy needs batteries and a car needs fuel \u2014 aren\u2019t those like food?\u201d Good thinking! It is true that machines need energy too. But needing fuel is only <b>one</b> of the three tests. As we are about to see, a car fails the others completely, so it is not alive."],
+      key:"Living things need food and water for energy. Animals eat; plants make their own food from sunlight. Machines need fuel too \u2014 but that alone does not make them alive."},
+    {snum:"04",h:"Test 3 \u2014 Living things make more of themselves",paras:[
+      "This is the big one that machines can never do. Living things can create <b>new living things like themselves</b>. Cats have kittens. Birds lay eggs that hatch into chicks. An apple tree grows apples full of seeds, and each seed can become a whole new apple tree.",
+      "Scientists call this <b>reproduction</b>. A car cannot build a baby car in the garage. A phone cannot make a little phone. Only living things pass life on to a new generation \u2014 and that is often the clearest way to tell something is truly alive."],
+      key:"Living things can make more of themselves \u2014 babies, eggs, or seeds. This is called reproduction, and machines can never do it."},
+    {snum:"05",h:"A bonus clue \u2014 living things react to the world",paras:[
+      "There is one more handy clue. Living things <b>notice and respond</b> to what is happening around them. A sunflower slowly turns to follow the sun across the sky. A plant\u2019s roots grow toward water hidden in the soil. And if you touch something hot, you yank your hand away before you even have time to think about it.",
+      "A rock does none of this. Push it into the sun, and it just sits there. Reacting to the world \u2014 to light, to touch, to danger \u2014 is another strong sign that something is alive."],
+      key:"Living things sense and react to the world around them: a plant turns to the light, and you pull back from something hot."},
+    {snum:"06",h:"The tricky part \u2014 things that WERE alive",paras:[
+      "Here is what trips people up. A <b>wooden pencil</b> is not alive. But it is made of wood, and wood came from a <b>tree</b> \u2014 which was very much alive while it was growing. So the pencil itself is not living, but its <b>material</b> once was part of a living thing.",
+      "This is true for lots of everyday objects. Cotton in your shirt comes from a cotton plant. Paper comes from trees. Leather comes from an animal\u2019s skin, and wool comes from a sheep. None of these objects are alive now \u2014 but each one is made from something that used to be. Compare that to a rock, a drop of water, or a steel key, which were <b>never</b> alive at all."],
+      svg:`<svg viewBox="0 0 360 140" role="img" aria-label="A living tree becomes a wooden pencil, a material that is no longer alive"><defs><marker id="ap" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--ink-soft)"/></marker></defs><rect x="66" y="80" width="12" height="34" fill="#8a5a33"/><circle cx="72" cy="58" r="30" fill="#6FA86A"/><circle cx="52" cy="66" r="18" fill="#7FB879"/><circle cx="92" cy="66" r="18" fill="#7FB879"/><text x="72" y="130" text-anchor="middle" font-size="12" fill="var(--ink-soft)">tree \u2014 was alive</text><line x1="128" y1="72" x2="196" y2="72" stroke="var(--ink-soft)" stroke-width="2" marker-end="url(#ap)"/><text x="162" y="60" text-anchor="middle" font-size="11" fill="var(--ink-soft)">becomes</text><g transform="translate(232,55)"><rect x="0" y="6" width="90" height="16" rx="3" fill="#F0B429"/><polygon points="90,6 108,14 90,22" fill="#E8C39E"/><polygon points="104,11 108,14 104,17" fill="#3a3a3a"/><rect x="0" y="6" width="12" height="16" fill="#E27A9E"/></g><text x="286" y="130" text-anchor="middle" font-size="12" fill="var(--ink-soft)">pencil \u2014 not alive now</text></svg>`,
+      figcap:"A pencil is not alive \u2014 but its wood came from a tree that was.",
+      key:"Wood, paper, cotton, wool, and leather are not alive now, but they came from living things. Rock, water, and metal were never alive."},
+    {snum:"07",h:"The cases that fool everyone",paras:[
+      "Now for the fun part \u2014 the tricky ones, where being a careful scientist really pays off.",
+      "<b>Is a seed alive?</b> Yes! It looks like it is doing nothing, but it is really just <b>resting</b>, waiting for water and warmth. Give it those, and it grows into a plant \u2014 something only a living thing can do.",
+      "<b>Is a candle flame alive?</b> It is tempting to say yes: it grows, it flickers as if moving, and it \u2018needs\u2019 air and wax to keep going. But it fails the real test \u2014 a flame cannot make more of itself the way living things do, and it is not built from tiny living cells. So fire is <b>not</b> alive.",
+      "<b>Is a mushroom alive?</b> Yes. It has no face, no legs, and never moves around, but it grows, takes in food, and makes more mushrooms by spreading tiny spores. It passes the test."],
+      key:"A seed is alive (just resting). A candle flame is NOT alive (it cannot truly reproduce and has no cells). A mushroom IS alive, even without moving."}
+   ]},
+  basic:[
+   {q:"Which of these is ALIVE?",opts:["A puppy","A rock","A metal spoon","A plastic toy"],correct:0,why:"A puppy grows, needs food and water, and can have puppies of its own \u2014 it passes all three tests for life.",real:"Deciding 'alive or not' is a real job scientists do, and it can be surprisingly tricky."},
+   {q:"One clear sign that something is a living thing is that it...",opts:["grows and needs food","is shiny","is heavy","is cold to touch"],correct:0,why:"Living things grow over time and need food and water for energy. Shiny, heavy, and cold are not signs of life.",real:"A gold coin is shiny and a bit cold, but it's certainly not alive."},
+   {q:"Living things can make ___ of themselves.",opts:["more","less","metal","none"],correct:0,why:"Living things reproduce \u2014 they make new living things like themselves, such as babies, eggs, or seeds.",real:"One dandelion can spread hundreds of seeds that each grow a new plant."},
+   {q:"Which of these came from something that was once ALIVE?",opts:["A wooden pencil","A rock","A drop of water","A steel key"],correct:0,why:"A pencil is made of wood, which came from a living tree. Rock, water, and metal were never alive.",real:"Paper, cotton, and leather all came from living things too."},
+   {q:"Do living things need water to stay alive?",opts:["Yes, they do","No, never","Only fish do","Only in summer"],correct:0,why:"Every living thing \u2014 animal or plant \u2014 needs water to survive.",real:"A plant with no water wilts and dies within days."},
+   {q:"A car needs fuel to run. Is a car alive?",opts:["No \u2014 it can't grow or make more cars","Yes \u2014 it needs fuel like we need food","Yes \u2014 it moves","Only when it's driving"],correct:0,why:"Needing fuel is only one clue. A car can't grow from the inside or make baby cars, so it fails the tests for life.",real:"Machines can do amazing things, but none of them are alive."},
+   {q:"Which of these grows bigger all by itself over time?",opts:["A kitten","A stone","A plastic ball","A coin"],correct:0,why:"Only living things grow on their own. A kitten grows into a cat; the others stay exactly the same size.",real:"Growth is one of the first signs scientists check for life."},
+   {q:"How do plants get their food?",opts:["They make it using sunlight","They only take it from the soil","They mostly eat insects","They don't need food"],correct:0,why:"Plants make their own food from sunlight, water, and air \u2014 something animals cannot do.",real:"This food-making is why plants must live where they can get light."},
+   {q:"Which of these is NOT alive?",opts:["A rock","A tree","A butterfly","A goldfish"],correct:0,why:"A rock never grows, needs no food, and makes no baby rocks. The tree, butterfly, and fish are all alive.",real:"Rocks can change shape over ages, but they are not living."},
+   {q:"The cotton in a T-shirt comes from...",opts:["a cotton plant","a rock","plastic","metal"],correct:0,why:"Cotton is fluffy fibre that grows on a cotton plant \u2014 a living thing \u2014 then is spun into thread and cloth.",real:"Wool comes from sheep and silk comes from silkworms, all living sources."}
+  ],
+  advanced:[
+   {q:"A robot dog can walk and bark. Why is it still NOT alive?",opts:["It can't grow or make more of itself","It is made of metal","It needs a battery","It is too heavy"],correct:0,why:"A robot may act lifelike, but it cannot grow from the inside or make baby robots. It fails the real tests for life.",real:"This is exactly the kind of puzzle scientists face with clever machines and computers."},
+   {q:"A candle flame grows taller, flickers, and needs air. Some kids think it's alive. Why is it actually NOT?",opts:["It can't make more of itself and has no living cells","It is too hot","It is bright","It moves too fast"],correct:0,why:"A flame copies a couple of life's clues, but it cannot truly reproduce and is not built from cells \u2014 so it isn't alive.",real:"Fire fooling people is a classic science puzzle \u2014 it looks alive but isn't."},
+   {q:"A seed sits still in a packet for a whole year. Is it alive?",opts:["Yes \u2014 it is resting and can grow into a plant","No \u2014 it never moves","No \u2014 it is too small","Only if it is green"],correct:0,why:"A seed is alive but resting. Give it water and warmth and it will grow into a plant \u2014 proof it was living all along.",real:"Some seeds have sprouted after resting for hundreds of years."},
+   {q:"An icicle slowly gets longer as water freezes onto its tip. Is the icicle alive?",opts:["No \u2014 it grows by adding onto the outside, not from within","Yes \u2014 it gets bigger","Yes \u2014 it needs cold to grow","No \u2014 it is too cold"],correct:0,why:"Living things grow from the inside by building themselves. An icicle just has water stuck onto its outside, and it can't reproduce.",real:"Crystals 'grow' this same non-living way \u2014 by stacking on the outside."},
+   {q:"You leave a toy car and a puppy alone with no food or water for a week. Which one is in trouble, and why?",opts:["The puppy \u2014 living things need food and water","The car \u2014 it needs fuel","Both equally","Neither, they're fine"],correct:0,why:"Only the living puppy needs food and water to survive. The toy car simply sits there, unbothered.",real:"This difference \u2014 needing food to live \u2014 is a core test for life."},
+   {q:"Wooden table, cotton blanket, glass cup, gold ring. Which TWO came from living things?",opts:["The table and the blanket","The cup and the ring","The table and the ring","None of them"],correct:0,why:"Wood comes from trees and cotton from plants \u2014 both once living. Glass is made from sand and gold is a metal; neither was ever alive.",real:"Sorting 'once alive' from 'never alive' is a favourite classroom puzzle."},
+   {q:"A mushroom has no face, no legs, and never walks around. Is it alive?",opts:["Yes \u2014 it grows, feeds, and makes more mushrooms","No \u2014 it can't move","No \u2014 it has no face","Only if it is white"],correct:0,why:"A mushroom passes the tests: it grows, takes in food, and spreads spores to make new mushrooms. It just doesn't move around.",real:"Mushrooms belong to their own group of living things called fungi."},
+   {q:"A river moves, roars, and flows into the sea. Why do we still say it is NOT alive?",opts:["It can't grow itself, feed itself, or make more rivers","It is too wet","It is too big","It moves too slowly"],correct:0,why:"Moving isn't enough. A river can't grow from within, doesn't eat, and can't reproduce \u2014 so it fails the tests for life.",real:"Wind and rivers move a lot, but movement alone never means alive."},
+   {q:"Coral looks like a colourful rock on the sea floor, but it is actually alive. What would best PROVE that?",opts:["It grows bigger and makes new coral","It is hard","It is underwater","It is colourful"],correct:0,why:"The proof of life is that coral grows and produces new coral \u2014 tiny living animals building it, not lifeless stone.",real:"Coral reefs are built by billions of tiny living creatures over thousands of years."},
+   {q:"A sunflower slowly turns to face the sun as it moves across the sky. This shows that living things can...",opts:["respond to the world around them","make their own sunlight","stop needing water","turn into rocks"],correct:0,why:"Reacting to the world \u2014 here, following the light \u2014 is one of the signs of a living thing. A rock would never do this.",real:"This sun-following even has a name: heliotropism."}
+  ]
+},
+{ id:"g1l2", title:"Your Five Senses", tag:"Senses",
+  read:{
+   intro:"Everything you know about the world \u2014 the color of the sky, the smell of rain, the taste of ice cream, the warmth of a hug \u2014 arrives through your <b>senses</b>. You have five main ones, and each is like a different window onto the world. In this lesson we\u2019ll meet all five, learn a surprising fact about each, and discover how a good scientist uses them <b>safely</b>.",
+   sections:[
+    {snum:"01",h:"Five windows to the world",paras:[
+      "Your five senses are <b>sight</b> (eyes), <b>hearing</b> (ears), <b>smell</b> (nose), <b>taste</b> (tongue), and <b>touch</b> (skin). Each one collects a different kind of information and sends it to your brain, which puts it all together into one picture of what is happening around you.",
+      "Working as a team, your senses keep you safe, help you enjoy the world, and let you learn. Let\u2019s look at what makes each one special."],
+      svg:`<svg viewBox="0 0 400 200" role="img" aria-label="The five senses each send information to the brain"><defs><marker id="ab" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--ink-soft)"/></marker></defs><g font-size="12" fill="var(--ink)"><rect x="10" y="14" width="150" height="26" rx="13" fill="#fff" stroke="var(--line)"/><text x="22" y="31">\uD83D\uDC41 Eyes \u2014 sight</text><rect x="10" y="50" width="150" height="26" rx="13" fill="#fff" stroke="var(--line)"/><text x="22" y="67">\uD83D\uDC42 Ears \u2014 hearing</text><rect x="10" y="86" width="150" height="26" rx="13" fill="#fff" stroke="var(--line)"/><text x="22" y="103">\uD83D\uDC43 Nose \u2014 smell</text><rect x="10" y="122" width="150" height="26" rx="13" fill="#fff" stroke="var(--line)"/><text x="22" y="139">\uD83D\uDC45 Tongue \u2014 taste</text><rect x="10" y="158" width="150" height="26" rx="13" fill="#fff" stroke="var(--line)"/><text x="22" y="175">\u270B Skin \u2014 touch</text></g><g stroke="var(--ink-soft)" stroke-width="1.5" marker-end="url(#ab)" opacity="0.7"><line x1="164" y1="27" x2="286" y2="88"/><line x1="164" y1="63" x2="286" y2="95"/><line x1="164" y1="99" x2="286" y2="100"/><line x1="164" y1="135" x2="286" y2="107"/><line x1="164" y1="171" x2="286" y2="114"/></g><circle cx="330" cy="100" r="38" fill="#F6DCC0" stroke="var(--spark)" stroke-width="2"/><text x="330" y="97" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">Brain</text><text x="330" y="113" text-anchor="middle" font-size="10" fill="var(--ink-soft)">puts it together</text></svg>`,
+      figcap:"Each sense sends its own kind of message to the brain, which combines them.",
+      key:"The five senses are sight, hearing, smell, taste, and touch. Each collects different information and sends it to your brain."},
+    {snum:"02",h:"Sight \u2014 your eyes catch light",paras:[
+      "Your eyes let you see shapes, colors, and how far away things are. But here is the surprising part: <b>your eyes do not make their own light</b>. They work by catching light that <b>bounces off</b> objects and into your eyes. That is why you can\u2019t see a thing in a completely dark room \u2014 there is no light for your eyes to catch, no matter how wide you open them.",
+      "Sight is often the sense we rely on most, but it needs light to work. Turn out every light, and even the sharpest eyes are helpless \u2014 which is exactly why we reach for a lamp or a torch in the dark."],
+      key:"Eyes see by catching light that bounces off things. With no light at all, your eyes cannot see \u2014 they don't make their own light."},
+    {snum:"03",h:"Hearing \u2014 your ears catch vibrations",paras:[
+      "Sound is really a tiny <b>shaking</b>, called a vibration, that travels through the air. When something vibrates \u2014 a guitar string, a drum, your friend\u2019s voice \u2014 it makes the air shake, and that shaking travels to your ears, which turn it into the sounds you hear.",
+      "Your ears also help you tell <b>where</b> a sound is coming from, because a sound reaches the ear closest to it a tiny bit sooner. Louder sounds come from bigger shakes; softer sounds from gentler ones."],
+      key:"Sound is a vibration \u2014 a shaking that travels through the air to your ears. Ears also help you tell which direction a sound came from."},
+    {snum:"04",h:"Smell \u2014 your nose is an early-warning system",paras:[
+      "Your nose picks up tiny bits floating in the air that are far too small to see. That gives smell a special job: <b>warning you of danger</b>. The smell of smoke can wake you from sleep. The smell of spoiled milk stops you from drinking it. A gas leak has a smell added on purpose so your nose can catch it.",
+      "Smell is also tightly linked to memory \u2014 a single whiff can bring back a whole day from years ago \u2014 and, as we\u2019ll see next, it teams up closely with taste."],
+      key:"Your nose detects tiny bits in the air and acts as an early-warning system for smoke, gas, and spoiled food."},
+    {snum:"05",h:"Taste \u2014 your tongue sorts flavors",paras:[
+      "Your tongue sorts food into a few basic flavors: <b>sweet, salty, sour, and bitter</b> (and a savory one too). This helps you enjoy good food \u2014 and spit out anything that tastes dangerously bad, since many harmful things taste bitter or sour.",
+      "Here is a neat secret: taste works hand-in-hand with smell. Most of what we call \u2018flavor\u2019 actually comes from the nose. That is why food tastes flat and boring when you have a stuffy cold \u2014 your nose is blocked, so your tongue is working almost alone."],
+      key:"Your tongue tastes sweet, salty, sour, and bitter, and it teams up with smell \u2014 which is why food tastes bland when your nose is blocked."},
+    {snum:"06",h:"Touch \u2014 your skin feels everything",paras:[
+      "Touch is spread over your whole body, in your skin. It tells you if something is <b>hot or cold, rough or smooth, hard or soft</b>, and how hard it is pressing on you. Unlike the other senses, touch isn\u2019t in just one spot \u2014 it is everywhere at once.",
+      "Touch also includes <b>pain</b>, and pain is a gift, strange as that sounds. When you accidentally touch a hot stove, the pain makes you yank your hand back <b>before you even have time to think</b>. That split-second reaction protects you from a much worse burn."],
+      key:"Skin senses hot/cold, rough/smooth, and pressure all over your body \u2014 and pain protects you by making you pull away from danger fast."},
+    {snum:"07",h:"Senses team up \u2014 and safe science",paras:[
+      "Your senses rarely work alone. Smell and taste combine into flavor. Eyes and ears work together \u2014 during a storm you <b>see</b> the lightning first and <b>hear</b> the thunder a few seconds later, because light reaches your eyes faster than sound reaches your ears.",
+      "A careful scientist also knows which sense to use <b>safely</b>. To check if a drink is too hot, you <b>touch</b> the cup first \u2014 you never taste something to test it, and you never taste or deeply sniff an unknown liquid, because it could be harmful. Use your safe senses, like sight and a careful distant smell, before anything else."],
+      key:"Senses work as a team (smell + taste, sight + hearing). Use the safe sense first \u2014 touch a cup before tasting, and never taste unknown things."},
+    {snum:"08",h:"Amazing animal senses",paras:[
+      "Humans have wonderful senses, but many animals beat us in one area. A <b>dog\u2019s</b> sense of smell is thousands of times stronger than ours \u2014 dogs can sniff out a single hidden treat, or even track a person across a field. An <b>eagle</b> can spot a mouse from high in the sky, far beyond what our eyes could ever see.",
+      "Some animals have senses we barely have at all. <b>Bats</b> find their way in the dark by making squeaks and listening for the echoes \u2014 \u2018seeing\u2019 with sound. Some <b>snakes</b> can sense the body heat of a nearby animal in total darkness. The world is full of senses, and every creature has its own set of windows."],
+      key:"Different animals have super-powered senses: dogs smell, eagles see far, bats use sound echoes, and some snakes sense heat."}
+   ]},
+  basic:[
+   {q:"How many main senses do people use to explore the world?",opts:["Five","Two","Ten","One"],correct:0,why:"The five main senses are sight, hearing, smell, taste, and touch.",real:"Some scientists count extra senses too, like your sense of balance."},
+   {q:"Which body part do you mainly SEE with?",opts:["Eyes","Ears","Nose","Tongue"],correct:0,why:"Your eyes catch light and let you see shapes, colors, and distance.",real:"Eyes are so important that about a third of your brain helps process what they see."},
+   {q:"Which sense uses your tongue?",opts:["Taste","Sight","Hearing","Smell"],correct:0,why:"Your tongue is the organ of taste \u2014 it sorts sweet, salty, sour, and bitter.",real:"Your tongue has thousands of tiny taste buds."},
+   {q:"You feel whether something is hot or cold using your sense of...",opts:["touch","sight","hearing","smell"],correct:0,why:"Touch, through your skin, tells you hot or cold, rough or smooth, hard or soft.",real:"Touch is the only sense spread over your whole body."},
+   {q:"You hear sounds with your...",opts:["ears","eyes","nose","hands"],correct:0,why:"Your ears catch the vibrations in the air that we hear as sound.",real:"Your ears also help you keep your balance."},
+   {q:"Smelling things uses your...",opts:["nose","tongue","ears","skin"],correct:0,why:"Your nose picks up tiny bits floating in the air, which you sense as smells.",real:"Your nose can tell apart thousands of different smells."},
+   {q:"In a room with NO light at all, can your eyes see the toys?",opts:["No \u2014 eyes need light to see","Yes, eyes make their own light","Only if you blink","Only the big toys"],correct:0,why:"Eyes work by catching light that bounces off things. With no light, there is nothing for them to catch.",real:"That is why you switch on a lamp to find something in the dark."},
+   {q:"Which sense would best warn you that food has gone bad?",opts:["Smell","Sight","Hearing","Touch"],correct:0,why:"Spoiled food gives off a bad smell, and your nose warns you before you eat it.",real:"Smell is like a built-in safety alarm for your body."},
+   {q:"Sound is really a kind of...",opts:["shaking (vibration) that travels","light","smell","taste"],correct:0,why:"Sound is a vibration \u2014 a shaking that travels through the air to your ears.",real:"That is why a loudspeaker you touch feels like it is buzzing."},
+   {q:"Which sense teams up with taste to give food its full flavor?",opts:["Smell","Sight","Hearing","Touch"],correct:0,why:"Most of what we call flavor actually comes from smell working together with taste.",real:"Pinch your nose while eating and the flavor almost disappears."}
+  ],
+  advanced:[
+   {q:"You want to know if a cup of cocoa is too hot to drink, without burning your tongue. Which is the safest sense to use FIRST?",opts:["Touch the outside of the cup","Taste it","Listen to it","Look at its color"],correct:0,why:"Touch lets you feel the heat safely through the cup. Tasting risks a burnt tongue \u2014 test the gentle way first.",real:"It is the same reason you check bathwater with a hand, not by jumping in."},
+   {q:"You have a stuffy nose from a cold, and your food tastes bland and boring. Why?",opts:["Taste works together with smell, and your nose is blocked","Your tongue is broken","The food has no flavor","Colds make food cold"],correct:0,why:"Most flavor comes from smell. With a blocked nose, your tongue works almost alone, so food tastes flat.",real:"Chefs know that smell is a huge part of how a dish 'tastes'."},
+   {q:"Blindfolded, how could you still tell a heavy golf ball from a light cotton ball?",opts:["By touch \u2014 feeling their weight and texture","By sight","By smell","You couldn't tell at all"],correct:0,why:"With sight blocked, touch takes over: you can feel that one is hard and heavy and the other is soft and light.",real:"People who cannot see often develop an amazingly sharp sense of touch."},
+   {q:"You are fast asleep when you smell smoke, and it wakes you up. Which sense protected you?",opts:["Smell \u2014 it warned you of danger","Sight","Hearing","Taste"],correct:0,why:"Even while your eyes were closed and asleep, your nose kept working and smelled the danger, waking you.",real:"This is why smoke alarms matter too \u2014 they back up your nose while you sleep."},
+   {q:"You are deep in a cave with no light at all. Which senses become the most useful to find your way?",opts:["Touch and hearing","Sight only","Smell only","None can help"],correct:0,why:"With no light, sight is useless. You would feel the walls with touch and listen for echoes and dripping water with hearing.",real:"Bats solve this by 'seeing' with sound echoes in the dark."},
+   {q:"Why should you NOT taste an unknown liquid to figure out what it is?",opts:["It could be harmful \u2014 use safer senses first","It might be cold","Tasting is slow","Your tongue gets tired"],correct:0,why:"An unknown liquid could be poisonous. A careful scientist checks with sight and a careful distant smell first, never by tasting.",real:"Real scientists follow strict safety rules and never taste-test unknown chemicals."},
+   {q:"A dog can find a single hidden treat by sniffing, something a person could never do. This means the dog's sense of ___ is far stronger than ours.",opts:["smell","sight","hearing","taste"],correct:0,why:"A dog's sense of smell is thousands of times stronger than a human's, so it can sniff out things we can't.",real:"That is why dogs help find missing people and sniff out danger."},
+   {q:"In a storm you SEE the lightning, then HEAR the thunder a few seconds later. What does this tell you?",opts:["Light reaches your eyes faster than sound reaches your ears","Thunder happens after lightning","Your ears are slow","The storm is moving away"],correct:0,why:"The flash and the boom happen together, but light travels much faster than sound, so you see it before you hear it.",real:"You can roughly count the seconds between them to guess how far away the storm is."},
+   {q:"You touch a hot stove and yank your hand back before you even think about it. How does this help you?",opts:["The fast reaction protects you from a worse burn","It makes the stove cooler","It turns off the pain","It cleans your hand"],correct:0,why:"Pain from touch triggers an instant pull-away reaction, protecting you from serious harm before your brain even decides.",real:"This lightning-fast move is called a reflex."},
+   {q:"A bat flies through a pitch-dark cave without bumping into anything. Which sense is it mainly using?",opts:["Hearing \u2014 it listens for echoes of its own squeaks","Sight","Smell","Taste"],correct:0,why:"A bat makes high squeaks and listens for the echoes bouncing back, building a 'sound picture' of the dark cave.",real:"This trick is called echolocation, and submarines use a version of it too."}
+  ]
+},
+{ id:"g1l3", title:"How We See, and Why the Moon Glows", tag:"Earth & space", read:null },
+{ id:"g1l4", title:"Light, Shadows, and Straight Lines", tag:"Physical science", read:null },
+{ id:"g1l5", title:"Hot and Cold: How Materials Handle Heat", tag:"Physical science", read:null },
+{ id:"g1l6", title:"Water That Disappears and Comes Back", tag:"Weather", read:null },
+{ id:"g1l7", title:"Day and Night: The Spinning Earth", tag:"Earth & space", read:null },
+{ id:"g1l8", title:"Magnets: The Picky Pullers", tag:"Magnets", read:null },
+{ id:"g1l9", title:"Sound: Good Vibrations", tag:"Sound", read:null }
+],
+2:null,3:null,4:null,5:null,6:null
+};
+
+/* ================= Profiles / storage ================= */
+const AVATARS=['\uD83D\uDD2C','\uD83C\uDF31','\uD83E\uDE90','\u26A1','\uD83E\uDDF2','\uD83E\uDD8B','\uD83C\uDF0B','\uD83D\uDD2D'];
+const COLORS=['#F3E0C4','#DDEFE0','#DCE6FA','#F6E2C0','#EFDCEA','#D6EEF1','#F4DAD0','#E2E0F2'];
+let PROFILES={kids:[],currentId:null};
+let uiState={confirmDelete:null,addingKid:false};
+function loadProfiles(){try{const r=localStorage.getItem('ascent_profiles_v3');if(r)PROFILES=JSON.parse(r);}catch(e){}}
+function saveProfiles(){try{localStorage.setItem('ascent_profiles_v3',JSON.stringify(PROFILES));}catch(e){}}
+function cur(){return PROFILES.kids.find(function(k){return k.id===PROFILES.currentId;});}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function newKid(n){const i=PROFILES.kids.length;return{id:'k'+Date.now()+Math.floor(Math.random()*999),name:n,avatar:AVATARS[i%AVATARS.length],color:COLORS[i%COLORS.length],cleared:0,grades:{},strands:{},updated:Date.now()};}
+function addKid(n){n=(n||'').trim().slice(0,20);if(!n)return;const k=newKid(n);PROFILES.kids.push(k);PROFILES.currentId=k.id;uiState.addingKid=false;saveProfiles();renderHome();}
+function selectKid(id){PROFILES.currentId=id;saveProfiles();renderHome();}
+function deleteKid(id){PROFILES.kids=PROFILES.kids.filter(function(k){return k.id!==id;});if(PROFILES.currentId===id)PROFILES.currentId=null;uiState.confirmDelete=null;saveProfiles();renderProfiles();}
+
+/* ---- curriculum helpers ---- */
+function lessonsOf(g){return CURRICULUM[g];}
+function lessonProg(k,g,id){const gg=k.grades[g];return gg&&gg.lessons?gg.lessons[id]:null;}
+function lessonDone(k,g,id){const p=lessonProg(k,g,id);return!!(p&&p.bPass&&p.aPass);}
+function gradeAuthored(g){const a=lessonsOf(g);return Array.isArray(a)&&a.every(function(l){return l.read!=null;});}
+function gradeCleared(k,g){const a=lessonsOf(g);if(!gradeAuthored(g))return false;return a.every(function(l){return lessonDone(k,g,l.id);});}
+function firstOpenLesson(k,g){const a=lessonsOf(g);for(let i=0;i<a.length;i++){if(!lessonDone(k,g,a[i].id))return i;}return a.length-1;}
+
+function recordQuiz(g,lesson,level,deck,answers){
+  const k=cur();if(!k)return;
+  let score=0;const tag=lesson.tag;
+  deck.forEach(function(Q,i){const ok=answers[i]&&answers[i].ok;if(ok)score++;
+    if(!k.strands[tag])k.strands[tag]={c:0,n:0};k.strands[tag].n++;if(ok)k.strands[tag].c++;});
+  const n=deck.length,pct=Math.round(score/n*100),passed=score>=Math.ceil(n*PASS_RATIO);
+  if(!k.grades[g])k.grades[g]={lessons:{}};if(!k.grades[g].lessons)k.grades[g].lessons={};
+  const gl=k.grades[g].lessons;if(!gl[lesson.id])gl[lesson.id]={bBest:0,aBest:0,bPass:false,aPass:false};
+  const rec=gl[lesson.id];
+  if(level===1){if(pct>rec.bBest)rec.bBest=pct;if(passed)rec.bPass=true;}
+  else{if(pct>rec.aBest)rec.aBest=pct;if(passed)rec.aPass=true;}
+  let cl=0;for(let gg=1;gg<=6;gg++){if(gradeCleared(k,gg))cl=gg;}
+  k.cleared=cl;k.updated=Date.now();saveProfiles();
+}
+
+/* ================= state ================= */
+let state={grade:1,li:0,level:1,deck:[],qi:0,answers:[],startGrade:null};
+const app=document.getElementById('app');const KEYS=['A','B','C','D','E'];
+(function(){const s=document.getElementById('stars');let h='';for(let i=0;i<70;i++){const z=Math.random()*2+1;h+='<i style="left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;width:'+z+'px;height:'+z+'px;animation-delay:'+Math.random()*4+'s"></i>';}s.innerHTML=h;})();
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function buildDeck(pool){return shuffle(pool).map(function(q){const ct=q.opts[q.correct];const o=shuffle(q.opts);return Object.assign({},q,{opts:o,correct:o.indexOf(ct)});});}
+const PASS=function(){return Math.ceil(state.deck.length*PASS_RATIO);};
+function setSky(g){document.body.className='g'+g;drawGauge(g);}
+function drawGauge(c){let h='';for(let g=6;g>=1;g--){const cl=g<c?'done':g===c?'here':'';h+='<div class="rung '+cl+'"><span class="dot"></span>G'+g+'</div>';}document.getElementById('gauge').innerHTML=h;}
+
+/* ================= profile picker ================= */
+function renderProfiles(){
+  setSky(1);state.startGrade=null;
+  let cards='';
+  PROFILES.kids.forEach(function(k){
+    if(uiState.confirmDelete===k.id){cards+='<div class="kidcard" style="background:var(--rethink-bg);border-color:#F0C8B7"><div class="confirm"><div class="cq">Remove '+esc(k.name)+'? This erases their progress.</div><div class="row"><button class="btn sm" style="background:var(--rethink)" onclick="deleteKid(\''+k.id+'\')">Remove</button><button class="btn ghost sm" onclick="uiState.confirmDelete=null;renderProfiles()">Keep</button></div></div></div>';}
+    else{const reached=k.cleared>0?('Grade '+k.cleared+' cleared'):'New climber';cards+='<button class="kidcard" onclick="selectKid(\''+k.id+'\')"><span class="av" style="background:'+k.color+'">'+k.avatar+'</span><span><span class="kn">'+esc(k.name)+'</span><span class="meta">'+reached+'</span></span><span class="del" onclick="event.stopPropagation();uiState.confirmDelete=\''+k.id+'\';renderProfiles()">\u2715</span></button>';}
+  });
+  let add=uiState.addingKid?'<div class="addform"><input id="kidname" type="text" maxlength="20" placeholder="Climber\'s name" autocomplete="off" onkeydown="if(event.key===\'Enter\')addKid(document.getElementById(\'kidname\').value)"><button class="btn" onclick="addKid(document.getElementById(\'kidname\').value)">Add</button><button class="btn ghost" onclick="uiState.addingKid=false;renderProfiles()">Cancel</button></div>':'<button class="addcard" onclick="uiState.addingKid=true;renderProfiles()">\uFF0B Add a climber</button>';
+  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1><div class="sub">'+(PROFILES.kids.length?'Who\'s climbing today?':'Let\'s set up your first climber.')+'</div></header><section class="panel">'+(PROFILES.kids.length?'<div class="kidgrid">'+cards+'</div><div style="margin-top:12px">'+add+'</div>':'<p class="lede">Each climber gets their own saved progress \u2014 lessons finished, best scores, and which topics they\'re strong or shaky in.</p><div style="margin-top:14px">'+add+'</div>')+'<p class="footnote">Progress is saved in this browser on this device. Add one climber per child.</p></section>';
+  const ni=document.getElementById('kidname');if(ni)ni.focus();
+}
+
+/* ================= home ================= */
+function gradeStateCls(k,g){if(gradeCleared(k,g))return'done';const a=lessonsOf(g);if(Array.isArray(a)&&a.some(function(l){return lessonDone(k,g,l.id);}))return'partial';return'';}
+function renderHome(){
+  setSky(1);state.startGrade=null;const k=cur();if(!k){renderProfiles();return;}
+  const nextG=Math.min(k.cleared+1,6);
+  let climb='';for(let g=1;g<=6;g++){let c=gradeStateCls(k,g);if(!c&&g===nextG)c='next';climb+='<div class="step '+c+'">'+g+'</div>';}
+  const ents=Object.keys(k.strands).map(function(s){const o=k.strands[s];return{s:s,pct:Math.round(o.c/o.n*100),n:o.n};}).filter(function(e){return e.n>=2;});
+  ents.sort(function(a,b){return a.pct-b.pct;});
+  let sh=ents.length?('<div class="dlabel" style="margin-top:18px">How the topics are going</div><div class="strands">'+ents.slice(0,7).map(function(e){const c=e.pct>=75?'var(--correct)':e.pct>=50?'var(--spark)':'var(--rethink)';return'<div class="strandbar"><span class="lab">'+e.s+'</span><span class="track"><span class="fill" style="width:'+e.pct+'%;background:'+c+'"></span></span><span class="pct">'+e.pct+'%</span></div>';}).join('')+'</div>'):'<p class="dash-empty" style="margin-top:14px">Finish a quiz or two and a breakdown of '+esc(k.name)+'\'s strongest and shakiest topics shows up here.</p>';
+  let cards='';
+  for(let g=1;g<=6;g++){const soon=lessonsOf(g)==null;const st=gradeStateCls(k,g);const isNext=!st&&g===nextG&&!soon;
+    let corner=soon?'<span class="alt muted">Coming soon</span>':(st==='done'?'<span class="tick">\u2713</span>':(st==='partial'?'<span class="alt">In progress</span>':(isNext?'<span class="alt">Next up</span>':(g===1?'<span class="alt">Base camp</span>':g===6?'<span class="alt">Summit</span>':''))));
+    cards+='<button class="gcard'+(st==='done'?' cleared':'')+(soon?' soon':'')+'" onclick="openGrade('+g+')">'+corner+'<span class="n">'+g+'</span><span class="band">'+BANDS[g].name+'</span><span class="topics">'+BANDS[g].topics+'</span></button>';}
+  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1></header><section class="dash"><div class="who"><span class="av" style="background:'+k.color+'">'+k.avatar+'</span><span class="nm">'+esc(k.name)+'</span><button class="switch" onclick="renderProfiles()">Switch climber</button></div><div class="dlabel">The climb</div><div class="climbrow">'+climb+'</div>'+sh+'</section><section class="panel"><p class="lede">Each grade is a series of <b>lessons</b>. For every lesson: <b>read it</b>, pass the <b>Basics quiz</b> (80%), then pass the <b>Advanced quiz</b> (80%) to unlock the next lesson. Finish all the lessons to clear the grade.</p><div class="pick-label">Choose a grade</div><div class="pick-hint">'+(k.cleared>0?'Cleared up to Grade '+k.cleared+'.':'Start with Grade 1.')+'</div><div class="grades">'+cards+'</div></section>';
+}
+
+function openGrade(g){if(state.startGrade==null)state.startGrade=g;state.grade=g;if(lessonsOf(g)==null){renderComingSoonGrade(g);return;}renderGradeMap(g);}
+function renderComingSoonGrade(g){setSky(g);app.innerHTML='<div class="qhead"><div class="band-name"><small>Grade '+g+' \u00b7 '+BANDS[g].name+'</small>Being deepened</div><button class="btn ghost sm" onclick="renderHome()">\u2190 Home</button></div><section class="panel"><div class="brief-kicker">Coming soon</div><div class="brief-head">'+BANDS[g].name+'</div><p class="brief-intro">This grade gets the full treatment next \u2014 idea-by-idea lessons, each with a Basics and an Advanced quiz, just like Grade 1.</p><div class="actions"><button class="btn" onclick="openGrade(1)">Go to Grade 1</button><button class="btn ghost" onclick="renderHome()">Home</button></div></section>';window.scrollTo({top:0});}
+
+/* ================= grade map (lesson list) ================= */
+function renderGradeMap(g){
+  setSky(g);const k=cur();const a=lessonsOf(g);const openIdx=firstOpenLesson(k,g);
+  const authored=a.filter(function(l){return l.read!=null;}).length;
+  const doneCount=a.filter(function(l){return lessonDone(k,g,l.id);}).length;
+  let rows='';
+  a.forEach(function(l,i){
+    const done=lessonDone(k,g,l.id);const unlocked=i===0||a.slice(0,i).every(function(p){return lessonDone(k,g,p.id);});
+    const soon=l.read==null;const isCurrent=!done&&unlocked&&!soon&&i===openIdx;
+    let cls=done?'done':(soon?'soon':(isCurrent?'current':(unlocked?'':'locked')));
+    let icon=done?'\u2713':(soon?'\u2026':(unlocked?(i+1):'\uD83D\uDD12'));
+    let cta=done?'Review':(soon?'Soon':(unlocked?(lessonProg(k,g,l.id)?'Continue':'Start'):'Locked'));
+    const clickable=(!soon)&&(done||unlocked);
+    rows+='<button class="lessonrow '+cls+'"'+(clickable?' onclick="openLesson('+g+','+i+')"':' disabled')+'><span class="lstat">'+icon+'</span><span class="lmid"><span class="ltitle">'+l.title+'</span><span class="ltag">'+l.tag+'</span></span><span class="lcta">'+cta+'</span></button>';
+  });
+  app.innerHTML='<div class="qhead"><div class="band-name"><small>Grade '+g+' \u00b7 '+BANDS[g].name+'</small>Lessons</div><button class="btn ghost sm" onclick="renderHome()">\u2190 Home</button></div><section class="panel"><div class="mapmeta">'+doneCount+' of '+a.length+' lessons complete \u00b7 '+authored+' ready to explore now</div><div class="mapbar"><span style="width:'+Math.round(doneCount/a.length*100)+'%"></span></div>'+rows+'<p class="footnote">Finish a lesson\u2019s Basics and Advanced quizzes to unlock the next one.</p></section>';
+  window.scrollTo({top:0});
+}
+
+/* ================= lesson read ================= */
+function openLesson(g,li){state.grade=g;state.li=li;if(state.startGrade==null)state.startGrade=g;renderLesson(g,li);}
+function renderLesson(g,li){
+  setSky(g);const l=lessonsOf(g)[li];const R=l.read;
+  let secs='';
+  R.sections.forEach(function(s){
+    const fig=s.svg?'<div class="figure">'+s.svg+(s.figcap?'<div class="figcap">'+s.figcap+'</div>':'')+'</div>':'';
+    const paras=s.paras.map(function(p){return'<p>'+p+'</p>';}).join('');
+    const key=s.key?'<div class="key-take"><b>Key idea \u2014</b> '+s.key+'</div>':'';
+    secs+='<div class="lsec"><div class="snum">'+s.snum+'</div><h3>'+s.h+'</h3>'+paras+fig+key+'</div>';
+  });
+  app.innerHTML='<div class="qhead"><div class="band-name"><small>Grade '+g+' \u00b7 Lesson '+(li+1)+' \u00b7 '+l.tag+'</small>The lesson</div><button class="btn ghost sm" onclick="renderGradeMap('+g+')">\u2190 Lessons</button></div><section class="panel"><div class="brief-kicker">Read this first</div><div class="brief-head">'+l.title+'</div><div class="brief-meta">'+R.sections.length+' parts \u00b7 about a 10-minute read</div><p class="brief-intro">'+R.intro+'</p>'+secs+'<div class="actions" style="margin-top:26px"><button class="btn" onclick="startQuiz('+g+','+li+',1)">Start Basics Quiz \u2192</button></div><p class="footnote">10 questions in the Basics quiz. Answers are explained at the very end.</p></section>';
+  window.scrollTo({top:0});
+}
+
+/* ================= quiz (no feedback until end) ================= */
+function startQuiz(g,li,level){const l=lessonsOf(g)[li];const pool=level===1?l.basic:l.advanced;state.grade=g;state.li=li;state.level=level;state.deck=buildDeck(pool);state.qi=0;state.answers=[];setSky(g);renderQuestion();}
+function renderQuestion(){
+  const g=state.grade,i=state.qi,Q=state.deck[i],n=state.deck.length,l=lessonsOf(g)[state.li];
+  setSky(g);
+  let pips='';for(let k=0;k<n;k++){pips+='<span class="pip '+((state.answers[k]!==undefined)?'answered':(k===i?'now':''))+'"></span>';}
+  const ans=state.answers[i];let o='';
+  Q.opts.forEach(function(t,idx){o+='<button class="opt'+(ans&&ans.choice===idx?' selected':'')+'" onclick="selectOption('+idx+')"><span class="key">'+KEYS[idx]+'</span><span>'+t+'</span></button>';});
+  const last=i+1>=n;const canNext=ans!==undefined;
+  app.innerHTML='<div class="qhead"><div class="band-name"><small>Grade '+g+' \u00b7 '+l.title+'</small>Question '+(i+1)+' of '+n+'</div><div class="progress-pips">'+pips+'</div></div><section class="panel"><span class="levelbadge'+(state.level===2?' adv':'')+'">Level '+state.level+' \u00b7 '+(state.level===1?'Basics':'Advanced')+'</span><div class="strand">'+l.tag+'</div><div class="qtext">'+Q.q+'</div><div class="opts">'+o+'</div><div class="actions"><button class="btn" onclick="onNext()"'+(canNext?'':' disabled')+'>'+(last?'Finish quiz':'Next question')+' \u2192</button><span style="align-self:center;font-size:12.5px;color:var(--ink-soft)">Answers explained at the end.</span></div></section>';
+}
+function selectOption(idx){state.answers[state.qi]={choice:idx};renderQuestion();}
+function onNext(){if(state.answers[state.qi]===undefined)return;if(state.qi+1<state.deck.length){state.qi++;renderQuestion();}else finishQuiz();}
+function finishQuiz(){state.deck.forEach(function(Q,i){const a=state.answers[i];state.answers[i]=Object.assign({},a,{ok:a&&a.choice===Q.correct});});recordQuiz(state.grade,lessonsOf(state.grade)[state.li],state.level,state.deck,state.answers);renderQuizReview();}
+
+/* ================= end-of-quiz review ================= */
+function renderQuizReview(){
+  const g=state.grade,li=state.li,lvl=state.level,l=lessonsOf(g)[li],n=state.deck.length;
+  const score=state.answers.filter(function(a){return a.ok;}).length,passed=score>=PASS();
+  setSky(g);const k=cur();const lastLesson=li>=lessonsOf(g).length-1;const nextAuthored=!lastLesson&&lessonsOf(g)[li+1].read!=null;
+  const cleared=gradeCleared(k,g);
+  let vline;
+  if(lvl===1)vline=passed?"Basics done \u2014 on to the advanced set!":"Almost \u2014 let\u2019s firm up the basics.";
+  else vline=passed?"Lesson complete! Nicely reasoned.":"So close. Give the advanced set another go.";
+  let rev='';
+  state.deck.forEach(function(Q,i){const a=state.answers[i],ok=a.ok;const yours=Q.opts[a.choice],right=Q.opts[Q.correct];
+    rev+='<div class="revcard '+(ok?'right':'wrong')+'"><div class="rtop"><span class="mark">'+(ok?'\u2713':'\u2717')+'</span><span class="rq">'+Q.q+'</span></div><div class="rans">'+(ok?'':'<span class="yours">Your answer: '+yours+'</span><br>')+'<span class="right-ans">Correct answer: '+right+'</span></div><div class="rwhy">'+(ok?'':'<span class="lead">Here\u2019s the idea:</span>')+Q.why+'</div><div class="rreal"><b>IN THE WILD</b> \u00b7 '+Q.real+'</div></div>';});
+  let btns;
+  if(lvl===1){btns=passed?'<button class="btn" onclick="startQuiz('+g+','+li+',2)">Continue to Advanced Quiz \u2192</button><button class="btn ghost" onclick="renderLesson('+g+','+li+')">Reread the lesson</button>':'<button class="btn" onclick="startQuiz('+g+','+li+',1)">Try Basics again \u2192</button><button class="btn ghost" onclick="renderLesson('+g+','+li+')">Reread the lesson</button>';}
+  else{if(passed){if(cleared){btns=g===6?'<button class="btn" onclick="renderSummit()">Reach the summit \u2192</button>':'<button class="btn" onclick="openGrade('+(g+1)+')">Grade '+g+' cleared \u2014 on to Grade '+(g+1)+' \u2192</button>';}else if(nextAuthored){btns='<button class="btn" onclick="openLesson('+g+','+(li+1)+')">Next lesson: '+lessonsOf(g)[li+1].title+' \u2192</button><button class="btn ghost" onclick="renderGradeMap('+g+')">All lessons</button>';}else{btns='<button class="btn" onclick="renderGradeMap('+g+')">Back to lessons \u2192</button>';}}else{btns='<button class="btn" onclick="startQuiz('+g+','+li+',2)">Try Advanced again \u2192</button><button class="btn ghost" onclick="renderLesson('+g+','+li+')">Reread the lesson</button>';}}
+  app.innerHTML='<div class="qhead"><div class="band-name"><small>Grade '+g+' \u00b7 '+l.title+'</small>Level '+lvl+' review</div></div><section class="panel"><span class="levelbadge'+(lvl===2?' adv':'')+'">Level '+lvl+' \u00b7 '+(lvl===1?'Basics':'Advanced')+' result</span><div class="result-score">'+score+'<small>/'+n+'</small></div><div class="verdict-line">'+vline+'</div><p class="passnote">'+(passed?'Passed \u2014 you needed <b>'+PASS()+' of '+n+'</b> ('+Math.round(PASS_RATIO*100)+'%).':'You need <b>'+PASS()+' of '+n+'</b> ('+Math.round(PASS_RATIO*100)+'%). Read the explanations, then try a <b>fresh set</b>.')+'</p><div class="revhead">Every question, explained</div>'+rev+'<div class="actions">'+btns+'<button class="btn ghost" onclick="renderGradeMap('+g+')">Lessons</button></div></section>';
+  window.scrollTo({top:0});
+}
+
+function renderSummit(){setSky(6);const sg=state.startGrade||1,nm=cur()?esc(cur().name):'Climber';app.innerHTML='<section class="panel summit" style="background:rgba(20,24,52,.55);border-color:rgba(255,255,255,.15);backdrop-filter:blur(4px)"><div class="eyebrow" style="color:#FFB446;letter-spacing:.3em;font-size:12px;font-weight:700;text-transform:uppercase">The summit \u00b7 deep space</div><h2>'+nm+' reached the top.</h2><p>From Grade '+sg+' to Grade 6, lesson by lesson, you didn\u2019t memorize facts \u2014 you <span class="stat">reasoned your way up</span>.</p><div class="actions" style="margin-top:26px"><button class="btn" onclick="renderHome()">Back to the climb</button></div></section>';window.scrollTo({top:0});}
+
+loadProfiles();renderProfiles();
+</script>
+</body>
+</html>
