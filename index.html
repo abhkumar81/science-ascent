@@ -347,6 +347,7 @@ function recordQuiz(g,lesson,level,deck,answers){
   else{if(pct>rec.aBest)rec.aBest=pct;if(passed)rec.aPass=true;}
   let cl=0;for(let gg=1;gg<=6;gg++){if(gradeCleared(k,gg))cl=gg;}
   k.cleared=cl;k.updated=Date.now();saveProfiles();
+  if(syncEnabled())syncNow();
 }
 
 /* ================= state ================= */
@@ -368,7 +369,7 @@ function renderProfiles(){
     else{const reached=k.cleared>0?('Grade '+k.cleared+' cleared'):'New climber';cards+='<button class="kidcard" onclick="selectKid(\''+k.id+'\')"><span class="av" style="background:'+k.color+'">'+k.avatar+'</span><span><span class="kn">'+esc(k.name)+'</span><span class="meta">'+reached+'</span></span><span class="del" onclick="event.stopPropagation();uiState.confirmDelete=\''+k.id+'\';renderProfiles()">\u2715</span></button>';}
   });
   let add=uiState.addingKid?'<div class="addform"><input id="kidname" type="text" maxlength="20" placeholder="Climber\'s name" autocomplete="off" onkeydown="if(event.key===\'Enter\')addKid(document.getElementById(\'kidname\').value)"><button class="btn" onclick="addKid(document.getElementById(\'kidname\').value)">Add</button><button class="btn ghost" onclick="uiState.addingKid=false;renderProfiles()">Cancel</button></div>':'<button class="addcard" onclick="uiState.addingKid=true;renderProfiles()">\uFF0B Add a climber</button>';
-  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1><div class="sub">'+(PROFILES.kids.length?'Who\'s climbing today?':'Let\'s set up your first climber.')+'</div></header><section class="panel">'+(PROFILES.kids.length?'<div class="kidgrid">'+cards+'</div><div style="margin-top:12px">'+add+'</div>':'<p class="lede">Each climber gets their own saved progress \u2014 lessons finished, best scores, and which topics they\'re strong or shaky in.</p><div style="margin-top:14px">'+add+'</div>')+'<p class="footnote">Progress is saved in this browser on this device. Add one climber per child.</p></section>';
+  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1><div class="sub">'+(PROFILES.kids.length?'Who\'s climbing today?':'Let\'s set up your first climber.')+'</div></header><section class="panel">'+(PROFILES.kids.length?'<div class="kidgrid">'+cards+'</div><div style="margin-top:12px">'+add+'</div>':'<p class="lede">Each climber gets their own saved progress \u2014 lessons finished, best scores, and which topics they\'re strong or shaky in.</p><div style="margin-top:14px">'+add+'</div>')+''+syncButtonHtml()+'<p class="footnote">Progress saves on this device. Turn on sync to share it across all devices. Add one climber per child.</p></section>';
   const ni=document.getElementById('kidname');if(ni)ni.focus();
 }
 
@@ -461,7 +462,96 @@ function renderQuizReview(){
 
 function renderSummit(){setSky(6);const sg=state.startGrade||1,nm=cur()?esc(cur().name):'Climber';app.innerHTML='<section class="panel summit" style="background:rgba(20,24,52,.55);border-color:rgba(255,255,255,.15);backdrop-filter:blur(4px)"><div class="eyebrow" style="color:#FFB446;letter-spacing:.3em;font-size:12px;font-weight:700;text-transform:uppercase">The summit \u00b7 deep space</div><h2>'+nm+' reached the top.</h2><p>From Grade '+sg+' to Grade 6, lesson by lesson, you didn\u2019t memorize facts \u2014 you <span class="stat">reasoned your way up</span>.</p><div class="actions" style="margin-top:26px"><button class="btn" onclick="renderHome()">Back to the climb</button></div></section>';window.scrollTo({top:0});}
 
+/* ================= Cloud sync (Firebase Realtime DB; family code = shared key) =================
+   Local-first: localStorage stays the source of truth; the cloud is a best-effort sync channel,
+   so progress is never lost if offline. Science data lives under science/<code>. */
+var SYNC_DB_URL="https://math-sprint-17646-default-rtdb.firebaseio.com";
+var FAMILY_KEY="ascent_family_v1";
+function getFamilyCode(){try{return localStorage.getItem(FAMILY_KEY)||'';}catch(e){return'';}}
+function setFamilyCode(c){try{c?localStorage.setItem(FAMILY_KEY,c):localStorage.removeItem(FAMILY_KEY);}catch(e){}}
+function familyPath(c){return String(c).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+function syncConfigured(){return !!SYNC_DB_URL;}
+function syncEnabled(){return !!SYNC_DB_URL&&!!getFamilyCode();}
+function mergeKid(a,b){
+  if(!a)return b;if(!b)return a;
+  var base=(b.updated||0)>=(a.updated||0)?Object.assign({},b):Object.assign({},a);
+  base.updated=Math.max(a.updated||0,b.updated||0);
+  base.cleared=Math.max(a.cleared||0,b.cleared||0);
+  var grades={},gk={};Object.keys(a.grades||{}).forEach(function(g){gk[g]=1;});Object.keys(b.grades||{}).forEach(function(g){gk[g]=1;});
+  Object.keys(gk).forEach(function(g){
+    var la=((a.grades||{})[g]||{}).lessons||{},lb=((b.grades||{})[g]||{}).lessons||{},lessons={},lk={};
+    Object.keys(la).forEach(function(id){lk[id]=1;});Object.keys(lb).forEach(function(id){lk[id]=1;});
+    Object.keys(lk).forEach(function(id){var x=la[id]||{},y=lb[id]||{};lessons[id]={bBest:Math.max(x.bBest||0,y.bBest||0),aBest:Math.max(x.aBest||0,y.aBest||0),bPass:!!(x.bPass||y.bPass),aPass:!!(x.aPass||y.aPass)};});
+    grades[g]={lessons:lessons};
+  });
+  base.grades=grades;
+  var strands={},sa=a.strands||{},sb=b.strands||{},sk={};Object.keys(sa).forEach(function(s){sk[s]=1;});Object.keys(sb).forEach(function(s){sk[s]=1;});
+  Object.keys(sk).forEach(function(s){var x=sa[s],y=sb[s];strands[s]=!x?y:!y?x:((y.n||0)>=(x.n||0)?y:x);});
+  base.strands=strands;
+  return base;
+}
+function mergeScience(local,remote){
+  local=local||{kids:[]};remote=remote||{kids:[]};
+  var la={},order=[];(local.kids||[]).forEach(function(k){la[k.id]=k;order.push(k.id);});
+  var rb={};(remote.kids||[]).forEach(function(k){rb[k.id]=k;if(!la[k.id])order.push(k.id);});
+  var kids=order.map(function(id){return mergeKid(la[id],rb[id]);});
+  return {kids:kids,currentId:local.currentId||remote.currentId||null};
+}
+function cloudGet(code){return fetch(SYNC_DB_URL+'/families/sci-'+familyPath(code)+'.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('get '+r.status);return r.json();}).then(function(v){return v?JSON.parse(v):null;});}
+function cloudPut(code,obj){return fetch(SYNC_DB_URL+'/families/sci-'+familyPath(code)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(JSON.stringify(obj))}).then(function(r){if(!r.ok)throw new Error('put '+r.status);return true;});}
+var _syncing=false,_lastSyncMsg='';
+function syncNow(opts){
+  opts=opts||{};
+  if(!syncEnabled())return Promise.resolve({ok:false});
+  if(_syncing)return Promise.resolve({ok:false});
+  _syncing=true;var code=getFamilyCode();
+  var local={kids:PROFILES.kids,currentId:PROFILES.currentId};
+  return cloudGet(code).then(function(remote){
+    var merged=remote?mergeScience(local,remote):local;
+    PROFILES.kids=merged.kids;if(!PROFILES.currentId&&merged.currentId)PROFILES.currentId=merged.currentId;
+    saveProfiles();
+    return cloudPut(code,{kids:PROFILES.kids,currentId:PROFILES.currentId});
+  }).then(function(){
+    _syncing=false;_lastSyncMsg='Synced ✓';if(opts.rerender)opts.rerender();if(opts.onDone)opts.onDone(true);return{ok:true};
+  }).catch(function(){
+    _syncing=false;_lastSyncMsg="Couldn't reach the cloud — saved on this device.";if(opts.rerender)opts.rerender();if(opts.onDone)opts.onDone(false);return{ok:false};
+  });
+}
+function setSyncMsg(t,cls){var el=document.getElementById('syncmsg');if(!el)return;el.textContent=t||'';el.style.color=cls==='bad'?'var(--rethink)':cls==='good'?'var(--correct)':'var(--ink-soft)';}
+function syncButtonHtml(){var code=getFamilyCode();return '<div style="margin-top:14px;text-align:center"><button class="btn ghost sm" onclick="renderSync()">☁︎ '+(code?('Sync: '+esc(code)):'Sync across devices')+'</button></div>';}
+function renderSync(){
+  setSky(1);var code=getFamilyCode();
+  var note=!syncConfigured()?'<p class="footnote" style="color:var(--rethink)">Auto-sync isn\'t set up on this version yet.</p>'
+    :code?'<p class="footnote">Sync is on with code <b>'+esc(code)+'</b>. Type the same code on every device.</p>'
+    :'<p class="footnote">Type the same Family Code on every device to sync each climber’s progress. No passwords.</p>';
+  var nowBtn=code?'<button class="btn ghost" onclick="syncNowUI()">🔄 Sync now</button>':'';
+  var offBtn=code?'<div style="margin-top:8px"><button class="btn ghost sm" style="color:var(--rethink)" onclick="turnOffSync()">Turn off sync on this device</button></div>':'';
+  app.innerHTML='<header class="mast"><div class="eyebrow">Science · grades 1–6</div><h1>Sync</h1></header>'
+    +'<section class="panel"><div class="pick-label">Family code</div>'
+    +'<div class="addform"><input id="famcode" type="text" maxlength="30" placeholder="e.g. kumar-family" autocomplete="off" value="'+esc(code)+'" onkeydown="if(event.key===\'Enter\')saveFamily()"><button class="btn" onclick="saveFamily()">'+(code?'Update':'Turn on')+'</button></div>'
+    +'<div class="row" style="margin-top:12px;gap:10px">'+nowBtn+'<button class="btn ghost" onclick="renderProfiles()">Back</button></div>'
+    +'<p id="syncmsg" class="footnote" style="min-height:20px"></p>'+note+offBtn+'</section>';
+}
+function saveFamily(){
+  if(!syncConfigured()){setSyncMsg("Auto-sync isn’t set up yet.","bad");return;}
+  var raw=(document.getElementById('famcode').value||'').trim();
+  if(!raw){setSyncMsg("Type a family code first.","bad");return;}
+  if(!familyPath(raw)){setSyncMsg("Use letters or numbers.","bad");return;}
+  setFamilyCode(raw);setSyncMsg("Turning on sync…","good");
+  syncNow({onDone:function(ok){renderSync();setSyncMsg(ok?("Sync is on ✓ ("+getFamilyCode()+")"):_lastSyncMsg,ok?"good":"bad");}});
+}
+function syncNowUI(){
+  if(!syncEnabled()){setSyncMsg("Turn on sync first.","bad");return;}
+  setSyncMsg("Syncing…","good");
+  syncNow({onDone:function(ok){renderSync();setSyncMsg(ok?"Synced ✓":_lastSyncMsg,ok?"good":"bad");}});
+}
+function turnOffSync(){
+  if(!confirm("Turn off sync on this device? Progress stays on this device."))return;
+  setFamilyCode("");renderSync();setSyncMsg("Sync turned off on this device.","good");
+}
+
 loadProfiles();renderProfiles();
+if(syncEnabled())syncNow({rerender:renderProfiles});
 </script>
 </body>
 </html>
