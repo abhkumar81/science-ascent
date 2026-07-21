@@ -162,6 +162,15 @@ body{font-family:var(--ui);color:var(--ink);min-height:100vh;background:linear-g
 .summit p{color:#CFC8E0;font-size:16px;line-height:1.6;margin-top:14px}.summit .stat{color:#FFB446}
 .footnote{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:24px;line-height:1.5}
 .g5 .footnote,.g6 .footnote{color:#B7B0CC}
+.psum{text-align:center;font-size:13px;color:var(--ink-soft);font-weight:600;margin:0 0 12px}
+.pday{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--paper)}
+.pdh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 13px;background:var(--paper-edge);font-weight:700;font-size:14px}
+.pdh .pdt{color:var(--ink-soft);font-weight:600}
+.prow{display:grid;grid-template-columns:auto 1fr auto auto;gap:9px;align-items:center;padding:9px 13px;border-top:1px solid var(--line);font-size:14px}
+.prow .pt{color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.prow .pl small{color:var(--ink-soft)}
+.prow .ps{font-weight:700;white-space:nowrap}
+.prow .pdur{color:var(--ink-soft);font-weight:600;text-align:right;white-space:nowrap;min-width:42px}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.2s!important}.stars i{animation:none}}
 </style>
 </head>
@@ -321,7 +330,7 @@ function loadProfiles(){try{const r=localStorage.getItem('ascent_profiles_v3');i
 function saveProfiles(){try{localStorage.setItem('ascent_profiles_v3',JSON.stringify(PROFILES));}catch(e){}}
 function cur(){return PROFILES.kids.find(function(k){return k.id===PROFILES.currentId;});}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function newKid(n){const i=PROFILES.kids.length;return{id:'k'+Date.now()+Math.floor(Math.random()*999),name:n,avatar:AVATARS[i%AVATARS.length],color:COLORS[i%COLORS.length],cleared:0,grades:{},strands:{},updated:Date.now()};}
+function newKid(n){const i=PROFILES.kids.length;return{id:'k'+Date.now()+Math.floor(Math.random()*999),name:n,avatar:AVATARS[i%AVATARS.length],color:COLORS[i%COLORS.length],cleared:0,grades:{},strands:{},activity:[],updated:Date.now()};}
 function addKid(n){n=(n||'').trim().slice(0,20);if(!n)return;const k=newKid(n);PROFILES.kids.push(k);PROFILES.currentId=k.id;uiState.addingKid=false;saveProfiles();renderHome();}
 function selectKid(id){PROFILES.currentId=id;saveProfiles();renderHome();}
 function deleteKid(id){PROFILES.kids=PROFILES.kids.filter(function(k){return k.id!==id;});if(PROFILES.currentId===id)PROFILES.currentId=null;uiState.confirmDelete=null;saveProfiles();renderProfiles();}
@@ -345,6 +354,10 @@ function recordQuiz(g,lesson,level,deck,answers){
   const rec=gl[lesson.id];
   if(level===1){if(pct>rec.bBest)rec.bBest=pct;if(passed)rec.bPass=true;}
   else{if(pct>rec.aBest)rec.aBest=pct;if(passed)rec.aPass=true;}
+  var secs=state.quizStart?Math.min(1800,Math.round((Date.now()-state.quizStart)/1000)):0;
+  if(!k.activity)k.activity=[];
+  k.activity.unshift({t:Date.now(),g:g,ln:lesson.title,lvl:level,score:score,n:n,passed:passed,secs:secs});
+  if(k.activity.length>400)k.activity.length=400;
   let cl=0;for(let gg=1;gg<=6;gg++){if(gradeCleared(k,gg))cl=gg;}
   k.cleared=cl;k.updated=Date.now();saveProfiles();
   if(syncEnabled())syncNow();
@@ -369,7 +382,7 @@ function renderProfiles(){
     else{const reached=k.cleared>0?('Grade '+k.cleared+' cleared'):'New climber';cards+='<button class="kidcard" onclick="selectKid(\''+k.id+'\')"><span class="av" style="background:'+k.color+'">'+k.avatar+'</span><span><span class="kn">'+esc(k.name)+'</span><span class="meta">'+reached+'</span></span><span class="del" onclick="event.stopPropagation();uiState.confirmDelete=\''+k.id+'\';renderProfiles()">\u2715</span></button>';}
   });
   let add=uiState.addingKid?'<div class="addform"><input id="kidname" type="text" maxlength="20" placeholder="Climber\'s name" autocomplete="off" onkeydown="if(event.key===\'Enter\')addKid(document.getElementById(\'kidname\').value)"><button class="btn" onclick="addKid(document.getElementById(\'kidname\').value)">Add</button><button class="btn ghost" onclick="uiState.addingKid=false;renderProfiles()">Cancel</button></div>':'<button class="addcard" onclick="uiState.addingKid=true;renderProfiles()">\uFF0B Add a climber</button>';
-  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1><div class="sub">'+(PROFILES.kids.length?'Who\'s climbing today?':'Let\'s set up your first climber.')+'</div></header><section class="panel">'+(PROFILES.kids.length?'<div class="kidgrid">'+cards+'</div><div style="margin-top:12px">'+add+'</div>':'<p class="lede">Each climber gets their own saved progress \u2014 lessons finished, best scores, and which topics they\'re strong or shaky in.</p><div style="margin-top:14px">'+add+'</div>')+''+syncButtonHtml()+'<p class="footnote">Progress saves on this device. Turn on sync to share it across all devices. Add one climber per child.</p></section>';
+  app.innerHTML='<header class="mast"><div class="eyebrow">Science \u00b7 grades 1\u20136</div><h1>Ascent</h1><div class="sub">'+(PROFILES.kids.length?'Who\'s climbing today?':'Let\'s set up your first climber.')+'</div></header><section class="panel">'+(PROFILES.kids.length?'<div class="kidgrid">'+cards+'</div><div style="margin-top:12px">'+add+'</div>':'<p class="lede">Each climber gets their own saved progress \u2014 lessons finished, best scores, and which topics they\'re strong or shaky in.</p><div style="margin-top:14px">'+add+'</div>')+''+parentButtonHtml()+syncButtonHtml()+'<p class="footnote">Progress saves on this device. Turn on sync to share it across all devices. Add one climber per child.</p></section>';
   const ni=document.getElementById('kidname');if(ni)ni.focus();
 }
 
@@ -427,7 +440,7 @@ function renderLesson(g,li){
 }
 
 /* ================= quiz (no feedback until end) ================= */
-function startQuiz(g,li,level){const l=lessonsOf(g)[li];const pool=level===1?l.basic:l.advanced;state.grade=g;state.li=li;state.level=level;state.deck=buildDeck(pool);state.qi=0;state.answers=[];setSky(g);renderQuestion();}
+function startQuiz(g,li,level){const l=lessonsOf(g)[li];const pool=level===1?l.basic:l.advanced;state.grade=g;state.li=li;state.level=level;state.deck=buildDeck(pool);state.qi=0;state.answers=[];state.quizStart=Date.now();setSky(g);renderQuestion();}
 function renderQuestion(){
   const g=state.grade,i=state.qi,Q=state.deck[i],n=state.deck.length,l=lessonsOf(g)[state.li];
   setSky(g);
@@ -488,6 +501,8 @@ function mergeKid(a,b){
   var strands={},sa=a.strands||{},sb=b.strands||{},sk={};Object.keys(sa).forEach(function(s){sk[s]=1;});Object.keys(sb).forEach(function(s){sk[s]=1;});
   Object.keys(sk).forEach(function(s){var x=sa[s],y=sb[s];strands[s]=!x?y:!y?x:((y.n||0)>=(x.n||0)?y:x);});
   base.strands=strands;
+  var seen={},acts=[];(a.activity||[]).concat(b.activity||[]).forEach(function(x){if(x&&!seen[x.t]){seen[x.t]=1;acts.push(x);}});
+  acts.sort(function(x,y){return y.t-x.t;});base.activity=acts.slice(0,400);
   return base;
 }
 function mergeScience(local,remote){
@@ -519,6 +534,36 @@ function syncNow(opts){
 }
 function setSyncMsg(t,cls){var el=document.getElementById('syncmsg');if(!el)return;el.textContent=t||'';el.style.color=cls==='bad'?'var(--rethink)':cls==='good'?'var(--correct)':'var(--ink-soft)';}
 function syncButtonHtml(){var code=getFamilyCode();return '<div style="margin-top:14px;text-align:center"><button class="btn ghost sm" onclick="renderSync()">☁︎ '+(code?('Sync: '+esc(code)):'Sync across devices')+'</button></div>';}
+function parentButtonHtml(){return '<div style="margin-top:10px;text-align:center"><button class="btn ghost sm" onclick="renderParent()">👪 Parent View</button></div>';}
+function dayKeyMs(ms){var x=new Date(ms);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+function fmtDur(secs){secs=Math.max(0,Math.round(secs||0));var m=Math.floor(secs/60),s=secs%60;if(m>=60){var h=Math.floor(m/60);return h+'h '+(m%60)+'m';}return m>0?(s>0?(m+'m '+s+'s'):(m+'m')):(s+'s');}
+function renderParent(){
+  setSky(1);
+  var html='<header class="mast"><div class="eyebrow">Science · grades 1–6</div><h1>Parent View</h1><div class="sub">Days practiced, quiz scores per lesson, and time spent.</div></header>';
+  if(!PROFILES.kids.length){app.innerHTML=html+'<section class="panel"><p class="lede">No climbers yet.</p><div style="margin-top:12px"><button class="btn ghost" onclick="renderProfiles()">Back</button></div></section>';return;}
+  PROFILES.kids.forEach(function(k){
+    var acts=(k.activity||[]).slice().sort(function(a,b){return b.t-a.t;});
+    html+='<section class="panel"><div class="who" style="margin-bottom:8px"><span class="av" style="background:'+k.color+'">'+k.avatar+'</span><span class="nm">'+esc(k.name)+'</span></div>';
+    if(!acts.length){html+='<p class="dash-empty">No quizzes yet.</p></section>';return;}
+    var days={},order=[];acts.forEach(function(x){var d=dayKeyMs(x.t);if(!days[d]){days[d]=[];order.push(d);}days[d].push(x);});
+    var totSecs=acts.reduce(function(a,x){return a+(x.secs||0);},0);
+    html+='<p class="psum">'+order.length+(order.length===1?' day':' days')+' practiced · '+acts.length+' quizzes · '+fmtDur(totSecs)+' total</p>';
+    order.forEach(function(d){
+      var rows=days[d],dsecs=rows.reduce(function(a,x){return a+(x.secs||0);},0);
+      var p=d.split('-'),dl=new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+      html+='<div class="pday"><div class="pdh"><span>'+dl+'</span><span class="pdt">'+rows.length+(rows.length===1?' quiz · ':' quizzes · ')+fmtDur(dsecs)+'</span></div>';
+      rows.forEach(function(x){
+        var t=new Date(x.t).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        var mark=x.passed?'<span style="color:var(--correct)">✓</span>':'<span style="color:var(--rethink)">✗</span>';
+        html+='<div class="prow"><span class="pt">'+t+'</span><span class="pl">G'+x.g+' · '+esc(x.ln||'')+' <small>('+(x.lvl===2?'Advanced':'Basics')+')</small></span><span class="ps">'+mark+' '+x.score+'/'+x.n+'</span><span class="pdur">'+fmtDur(x.secs)+'</span></div>';
+      });
+      html+='</div>';
+    });
+    html+='</section>';
+  });
+  html+='<section class="panel"><button class="btn ghost" onclick="renderProfiles()">Back</button></section>';
+  app.innerHTML=html;window.scrollTo({top:0});
+}
 function renderSync(){
   setSky(1);var code=getFamilyCode();
   var note=!syncConfigured()?'<p class="footnote" style="color:var(--rethink)">Auto-sync isn\'t set up on this version yet.</p>'
